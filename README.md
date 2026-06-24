@@ -27,10 +27,4 @@ npm start
 
 The app opens both windows automatically.
 
-## Controls
-
-- `+1`, `-1`
-- `+5`, `-5`
-- `Reset To 0`
-
 Both windows stay in sync through Electron IPC.
