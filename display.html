@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Match Display</title>
+    <style>
+      :root {
+        --bg: #0b1020;
+        --red: #ef4444;
+        --blue: #3b82f6;
+        --text: #f8fafc;
+        --muted: #cbd5e1;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: radial-gradient(circle at 50% 0%, #172554, var(--bg));
+        color: var(--text);
+      }
+
+      .scores {
+        flex: 1;
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .lane {
+        display: grid;
+        place-items: center;
+        text-align: center;
+        align-content: center;
+        padding: 2rem;
+      }
+
+      .lane.red {
+        background: linear-gradient(180deg, rgb(239 68 68 / 18%), rgb(239 68 68 / 5%));
+      }
+
+      .lane.blue {
+        background: linear-gradient(180deg, rgb(59 130 246 / 18%), rgb(59 130 246 / 5%));
+      }
+
+      .label {
+        font-size: clamp(1rem, 2.2vw, 1.4rem);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 1rem;
+      }
+
+      .score {
+        font-size: clamp(7rem, 24vw, 17rem);
+        font-weight: 800;
+        line-height: 1;
+        margin-bottom: 1rem;
+      }
+
+      .score.red {
+        color: var(--red);
+        text-shadow: 0 0 26px rgb(239 68 68 / 42%);
+      }
+
+      .score.blue {
+        color: var(--blue);
+        text-shadow: 0 0 26px rgb(59 130 246 / 42%);
+      }
+
+      @keyframes winner-blink {
+        0% {
+          opacity: 1;
+        }
+
+        50% {
+          opacity: 0.2;
+        }
+
+        100% {
+          opacity: 1;
+        }
+      }
+
+      .flash-winner {
+        animation: winner-blink 220ms steps(1, end) infinite;
+      }
+
+      .name {
+        font-size: clamp(1.4rem, 3vw, 2.2rem);
+        font-weight: 700;
+      }
+
+      .timer-wrap {
+        width: 100%;
+        text-align: center;
+        padding: 1rem 0 1.4rem;
+      }
+
+      .timer-label {
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        font-size: 0.9rem;
+      }
+
+      .timer {
+        font-size: clamp(2.5rem, 8vw, 4.2rem);
+        font-weight: 800;
+        line-height: 1.1;
+      }
+
+      .timer.urgent {
+        color: #ef4444;
+        text-shadow: 0 0 20px rgb(239 68 68 / 40%);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="scores">
+      <section class="lane red">
+        <div id="red-label" class="label">Red</div>
+        <div id="red-score" class="score red">0</div>
+        <div id="red-name" class="name">Competitor A</div>
+      </section>
+
+      <section class="lane blue">
+        <div id="blue-label" class="label">Blue</div>
+        <div id="blue-score" class="score blue">0</div>
+        <div id="blue-name" class="name">Competitor B</div>
+      </section>
+    </div>
+
+    <div class="timer-wrap">
+      <div class="timer-label">Countdown</div>
+      <div id="timer" class="timer">02:00.00</div>
+    </div>
+
+    <script>
+      function applyResponsiveType() {
+        const baseWidth = 1280;
+        const baseHeight = 720;
+        const widthScale = window.innerWidth / baseWidth;
+        const heightScale = window.innerHeight / baseHeight;
+        const scale = Math.max(0.65, Math.min(2.2, Math.min(widthScale, heightScale)));
+        document.documentElement.style.fontSize = `${16 * scale}px`;
+      }
+
+      const redLabelEl = document.getElementById('red-label');
+      const blueLabelEl = document.getElementById('blue-label');
+      const redScoreEl = document.getElementById('red-score');
+      const blueScoreEl = document.getElementById('blue-score');
+      const redNameEl = document.getElementById('red-name');
+      const blueNameEl = document.getElementById('blue-name');
+      const timerEl = document.getElementById('timer');
+      let lastHandledMatchEventId = 0;
+      let flashTimeoutId = null;
+      let audioContext = null;
+
+      function formatTime(totalCentiseconds) {
+        const centiseconds = Math.max(0, Math.floor(Number(totalCentiseconds) || 0));
+        const minutesPart = String(Math.floor(centiseconds / 6000)).padStart(2, '0');
+        const secondsPart = String(Math.floor(centiseconds / 100) % 60).padStart(2, '0');
+        const centisPart = String(centiseconds % 100).padStart(2, '0');
+        return `${minutesPart}:${secondsPart}.${centisPart}`;
+      }
+
+      function clearWinnerFlash() {
+        redScoreEl.classList.remove('flash-winner');
+        blueScoreEl.classList.remove('flash-winner');
+
+        if (flashTimeoutId) {
+          clearTimeout(flashTimeoutId);
+          flashTimeoutId = null;
+        }
+      }
+
+      function flashWinner(winner, durationMs) {
+        clearWinnerFlash();
+
+        if (winner === 'red') {
+          redScoreEl.classList.add('flash-winner');
+        } else if (winner === 'blue') {
+          blueScoreEl.classList.add('flash-winner');
+        } else {
+          redScoreEl.classList.add('flash-winner');
+          blueScoreEl.classList.add('flash-winner');
+        }
+
+        flashTimeoutId = setTimeout(() => {
+          clearWinnerFlash();
+        }, durationMs);
+      }
+
+      function playBuzzer(durationMs) {
+        try {
+          if (!audioContext) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            audioContext = new AudioCtx();
+          }
+
+          if (audioContext.state === 'suspended') {
+            audioContext.resume();
+          }
+
+          const now = audioContext.currentTime;
+          const endAt = now + durationMs / 1000;
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+
+          oscillator.type = 'square';
+          oscillator.frequency.setValueAtTime(880, now);
+
+          gainNode.gain.setValueAtTime(0.0001, now);
+          gainNode.gain.exponentialRampToValueAtTime(0.25, now + 0.03);
+          gainNode.gain.setValueAtTime(0.25, Math.max(now + 0.03, endAt - 0.08));
+          gainNode.gain.exponentialRampToValueAtTime(0.0001, endAt);
+
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+
+          oscillator.start(now);
+          oscillator.stop(endAt);
+        } catch (_error) {
+          // Skip sound if audio is unavailable in this environment.
+        }
+      }
+
+      function handleMatchEvent(matchEvent) {
+        if (!matchEvent || typeof matchEvent.id !== 'number') {
+          return;
+        }
+
+        if (matchEvent.id <= lastHandledMatchEventId) {
+          return;
+        }
+
+        lastHandledMatchEventId = matchEvent.id;
+
+        const buzzerMs = Number(matchEvent.buzzerMs) || 2000;
+        const flashMs = Number(matchEvent.flashMs) || 5000;
+
+        playBuzzer(buzzerMs);
+
+        if (flashMs > 0) {
+          flashWinner(matchEvent.winner, flashMs);
+        }
+      }
+
+      function renderState(state) {
+        redLabelEl.textContent = state.red.label;
+        blueLabelEl.textContent = state.blue.label;
+        redScoreEl.textContent = state.red.score;
+        blueScoreEl.textContent = state.blue.score;
+        redNameEl.textContent = state.red.name;
+        blueNameEl.textContent = state.blue.name;
+        timerEl.textContent = formatTime(state.timerCentiseconds);
+        timerEl.classList.toggle('urgent', state.timerCentiseconds < 1500);
+        handleMatchEvent(state.matchEvent);
+      }
+
+      window.scoreboard.getState().then((state) => {
+        renderState(state);
+      });
+
+      window.scoreboard.onStateUpdate((state) => {
+        renderState(state);
+      });
+
+      applyResponsiveType();
+      window.addEventListener('resize', applyResponsiveType);
+    </script>
+  </body>
+</html>

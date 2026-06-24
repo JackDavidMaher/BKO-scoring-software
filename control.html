@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Match Controls</title>
+    <style>
+      :root {
+        --bg: #f8fafc;
+        --panel: #ffffff;
+        --text: #0f172a;
+        --muted: #475569;
+        --red: #dc2626;
+        --blue: #2563eb;
+        --inc: #16a34a;
+        --dec: #b91c1c;
+        --soft: #e2e8f0;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+        color: var(--text);
+        display: grid;
+        place-items: center;
+        padding: 1rem;
+      }
+
+      .panel {
+        width: min(560px, 100%);
+        background: var(--panel);
+        border-radius: 16px;
+        padding: 1rem;
+        box-shadow: 0 20px 40px rgb(15 23 42 / 10%);
+      }
+
+      h1 {
+        margin: 0 0 0.4rem;
+        font-size: 1.1rem;
+      }
+
+      .help {
+        margin: 0 0 0.8rem;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .scoreboards {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.65rem;
+        margin-bottom: 0.8rem;
+      }
+
+      .team {
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 0.7rem;
+      }
+
+      .team.red {
+        border-color: rgb(220 38 38 / 35%);
+      }
+
+      .team.blue {
+        border-color: rgb(37 99 235 / 35%);
+      }
+
+      .team-title {
+        margin: 0 0 0.3rem;
+        font-size: 0.95rem;
+        font-weight: 700;
+      }
+
+      .team.red .team-title {
+        color: var(--red);
+      }
+
+      .team.blue .team-title {
+        color: var(--blue);
+      }
+
+      .team-score {
+        font-size: 1.8rem;
+        margin: 0 0 0.6rem;
+        font-weight: 800;
+      }
+
+      .name-input {
+        width: 100%;
+        margin: 0 0 0.6rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 0.45rem 0.55rem;
+        font-size: 0.9rem;
+      }
+
+      .buttons {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.4rem;
+      }
+
+      button {
+        border: 0;
+        border-radius: 12px;
+        padding: 0.7rem 0.9rem;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 120ms ease, filter 120ms ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.03);
+      }
+
+      button:active {
+        transform: translateY(0);
+      }
+
+      .inc {
+        background: color-mix(in oklab, var(--inc) 20%, white);
+        color: #14532d;
+      }
+
+      .dec {
+        background: color-mix(in oklab, var(--dec) 16%, white);
+        color: #7f1d1d;
+      }
+
+      .reset {
+        margin-top: 0.8rem;
+        width: 100%;
+        background: var(--soft);
+        color: var(--muted);
+      }
+
+      .timer-panel {
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 0.8rem;
+      }
+
+      .timer-line {
+        display: flex;
+        gap: 0.55rem;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .timer-display {
+        font-size: 1.8rem;
+        font-weight: 800;
+        margin: 0.25rem 0 0.6rem;
+      }
+
+      .timer-input {
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 0.5rem 0.6rem;
+        width: 110px;
+      }
+
+      .timer-btn {
+        background: #0f766e;
+        color: #ffffff;
+      }
+
+      .space-note {
+        margin: 0.6rem 0 0;
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+    </style>
+  </head>
+  <body>
+    <section class="panel">
+      <h1>Match Controls</h1>
+      <p class="help">Set names, update scores, and control the countdown timer.</p>
+
+      <div class="scoreboards">
+        <section class="team red">
+          <h2 class="team-title">Red Side</h2>
+          <p id="red-score" class="team-score">0</p>
+          <input id="red-name" class="name-input" type="text" value="Competitor A" placeholder="Red competitor name" />
+          <div class="buttons">
+            <button class="inc" data-side="red" data-delta="1">+1</button>
+            <button class="inc" data-side="red" data-delta="2">+2</button>
+            <button class="inc" data-side="red" data-delta="3">+3</button>
+            <button class="dec" data-side="red" data-delta="-1">-1</button>
+            <button class="dec" data-side="red" data-delta="-2">-2</button>
+            <button class="dec" data-side="red" data-delta="-3">-3</button>
+          </div>
+        </section>
+
+        <section class="team blue">
+          <h2 class="team-title">Blue Side</h2>
+          <p id="blue-score" class="team-score">0</p>
+          <input id="blue-name" class="name-input" type="text" value="Competitor B" placeholder="Blue competitor name" />
+          <div class="buttons">
+            <button class="inc" data-side="blue" data-delta="1">+1</button>
+            <button class="inc" data-side="blue" data-delta="2">+2</button>
+            <button class="inc" data-side="blue" data-delta="3">+3</button>
+            <button class="dec" data-side="blue" data-delta="-1">-1</button>
+            <button class="dec" data-side="blue" data-delta="-2">-2</button>
+            <button class="dec" data-side="blue" data-delta="-3">-3</button>
+          </div>
+        </section>
+      </div>
+
+      <button id="reset-scores" class="reset">Reset Scores</button>
+
+      <section class="timer-panel">
+        <h2 class="team-title">Countdown Timer</h2>
+        <p id="timer-display" class="timer-display">02:00.00</p>
+        <div class="timer-line">
+          <input id="timer-input" class="timer-input" type="text" value="02:00.00" placeholder="MM:SS.CC" />
+          <button id="set-timer" class="timer-btn">Set Timer</button>
+          <button id="toggle-timer" class="timer-btn">Start</button>
+        </div>
+        <p class="space-note">Press Spacebar to start/stop the timer.</p>
+      </section>
+    </section>
+
+    <script>
+      function applyResponsiveType() {
+        const baseWidth = 1000;
+        const baseHeight = 760;
+        const widthScale = window.innerWidth / baseWidth;
+        const heightScale = window.innerHeight / baseHeight;
+        const scale = Math.max(0.72, Math.min(1.7, Math.min(widthScale, heightScale)));
+        document.documentElement.style.fontSize = `${16 * scale}px`;
+      }
+
+      const redScoreEl = document.getElementById('red-score');
+      const blueScoreEl = document.getElementById('blue-score');
+      const redNameEl = document.getElementById('red-name');
+      const blueNameEl = document.getElementById('blue-name');
+      const resetScoresBtn = document.getElementById('reset-scores');
+      const timerDisplayEl = document.getElementById('timer-display');
+      const timerInputEl = document.getElementById('timer-input');
+      const setTimerBtn = document.getElementById('set-timer');
+      const toggleTimerBtn = document.getElementById('toggle-timer');
+
+      function formatTime(totalCentiseconds) {
+        const centiseconds = Math.max(0, Math.floor(Number(totalCentiseconds) || 0));
+        const minutesPart = String(Math.floor(centiseconds / 6000)).padStart(2, '0');
+        const secondsPart = String(Math.floor(centiseconds / 100) % 60).padStart(2, '0');
+        const centisPart = String(centiseconds % 100).padStart(2, '0');
+        return `${minutesPart}:${secondsPart}.${centisPart}`;
+      }
+
+      function parseTime(raw) {
+        const value = String(raw || '').trim();
+        if (!value) {
+          return null;
+        }
+
+        const match = value.match(/^(\d+):(\d{1,2})(?:\.(\d{1,2}))?$/);
+        if (!match) {
+          return null;
+        }
+
+        const minutes = Number(match[1]);
+        const seconds = Number(match[2]);
+        const rawCentis = match[3] || '0';
+        const centis = Number(rawCentis.padEnd(2, '0'));
+
+        if ([minutes, seconds, centis].some((part) => Number.isNaN(part) || part < 0 || !Number.isFinite(part))) {
+          return null;
+        }
+        if (seconds > 59) {
+          return null;
+        }
+
+        return Math.floor(minutes) * 6000 + Math.floor(seconds) * 100 + Math.floor(centis);
+      }
+
+      function renderState(state) {
+        redScoreEl.textContent = state.red.score;
+        blueScoreEl.textContent = state.blue.score;
+        redNameEl.value = state.red.name;
+        blueNameEl.value = state.blue.name;
+        timerDisplayEl.textContent = formatTime(state.timerCentiseconds);
+        toggleTimerBtn.textContent = state.timerRunning ? 'Stop' : 'Start';
+      }
+
+      document.querySelectorAll('[data-side][data-delta]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const side = button.dataset.side;
+          const delta = Number(button.dataset.delta);
+          window.scoreboard.changeScore(side, delta);
+        });
+      });
+
+      redNameEl.addEventListener('change', () => {
+        window.scoreboard.setCompetitorName('red', redNameEl.value);
+      });
+
+      blueNameEl.addEventListener('change', () => {
+        window.scoreboard.setCompetitorName('blue', blueNameEl.value);
+      });
+
+      resetScoresBtn.addEventListener('click', () => {
+        window.scoreboard.resetScores();
+      });
+
+      setTimerBtn.addEventListener('click', () => {
+        const parsed = parseTime(timerInputEl.value);
+        if (parsed === null) {
+          alert('Use MM:SS.CC format, for example 02:00.00');
+          return;
+        }
+        window.scoreboard.setTimer(parsed);
+      });
+
+      function toggleTimer() {
+        window.scoreboard.toggleTimer();
+      }
+
+      toggleTimerBtn.addEventListener('click', () => {
+        toggleTimer();
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.code !== 'Space') {
+          return;
+        }
+
+        const tag = document.activeElement && document.activeElement.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') {
+          return;
+        }
+
+        event.preventDefault();
+        toggleTimer();
+      });
+
+      window.scoreboard.getState().then((state) => {
+        renderState(state);
+        timerInputEl.value = formatTime(state.timerCentiseconds);
+      });
+
+      window.scoreboard.onStateUpdate((state) => {
+        renderState(state);
+      });
+
+      applyResponsiveType();
+      window.addEventListener('resize', applyResponsiveType);
+    </script>
+  </body>
+</html>
