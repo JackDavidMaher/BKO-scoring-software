@@ -4,9 +4,12 @@
   "description": "Basic two-window scoreboard app",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron . --ozone-platform=x11"
   },
   "devDependencies": {
-    "electron": "^31.0.2"
+    "electron": "^44.4.3"
+  },
+  "allowScripts": {
+    "electron@31.7.7": true
   }
 }

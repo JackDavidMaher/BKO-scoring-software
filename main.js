@@ -3,19 +3,42 @@ const path = require('path');
 
 let displayWindow;
 let controlWindow;
+function createDefaultRound() {
+  return {
+    redScore: '',
+    blueScore: '',
+    winner: 'none',
+    senshu: false,
+  };
+}
+
 let state = {
   red: {
     label: 'AKA',
-    name: 'Competitor AKA',
+    name: 'AKA',
     score: 0,
+    countback: {
+      yuko: 0,
+      wazaAri: 0,
+      ippon: 0,
+    },
   },
   blue: {
     label: 'AO',
-    name: 'Competitor AO',
+    name: 'AO',
     score: 0,
+    countback: {
+      yuko: 0,
+      wazaAri: 0,
+      ippon: 0,
+    },
   },
   timerCentiseconds: 9000,
   timerRunning: false,
+  matchType: 'individual',
+  senshuSide: null,
+  currentRoundIndex: 0,
+  teamRounds: Array.from({ length: 5 }, () => createDefaultRound()),
   matchEvent: {
     id: 0,
     reason: 'none',
@@ -36,6 +59,22 @@ function getWinner() {
 
   if (state.blue.score > state.red.score) {
     return 'blue';
+  }
+
+  return 'tie';
+}
+
+function getRoundWinnerFromScores(redScore, blueScore, senshuSide = null) {
+  if (Number(redScore) > Number(blueScore)) {
+    return 'red';
+  }
+
+  if (Number(blueScore) > Number(redScore)) {
+    return 'blue';
+  }
+
+  if (senshuSide === 'red' || senshuSide === 'blue') {
+    return senshuSide;
   }
 
   return 'tie';
@@ -148,8 +187,8 @@ function createWindows() {
   });
 
   controlWindow = new BrowserWindow({
-    width: 420,
-    height: 560,
+    width: 560,
+    height: 780,
     title: 'Score Controls',
     autoHideMenuBar: true,
     webPreferences: {
@@ -181,6 +220,13 @@ app.whenReady().then(() => {
       return;
     }
 
+    const absoluteValue = Math.abs(Number(delta));
+    if (absoluteValue === 0 || ![1, 2, 3].includes(absoluteValue)) {
+      return;
+    }
+
+    const key = absoluteValue === 1 ? 'yuko' : absoluteValue === 2 ? 'wazaAri' : 'ippon';
+    state[side].countback[key] += delta > 0 ? 1 : -1;
     state[side].score += delta;
     evaluateMatchEvents(state.timerCentiseconds);
     broadcastState();
@@ -189,7 +235,115 @@ app.whenReady().then(() => {
   ipcMain.on('score:reset', () => {
     state.red.score = 0;
     state.blue.score = 0;
+    state.red.countback = { yuko: 0, wazaAri: 0, ippon: 0 };
+    state.blue.countback = { yuko: 0, wazaAri: 0, ippon: 0 };
     evaluateMatchEvents(state.timerCentiseconds);
+    broadcastState();
+  });
+
+  ipcMain.on('match-type:set', (_, nextType) => {
+    if (nextType !== 'team' && nextType !== 'individual') {
+      return;
+    }
+
+    state.matchType = nextType;
+    broadcastState();
+  });
+
+  ipcMain.on('senshu:set', (_, side) => {
+    if (!['red', 'blue'].includes(side)) {
+      return;
+    }
+
+    state.senshuSide = state.senshuSide === side ? null : side;
+    broadcastState();
+  });
+
+  ipcMain.on('round:set-current', (_, index) => {
+    const numericIndex = Number(index);
+    if (!Number.isInteger(numericIndex) || numericIndex < -1 || numericIndex >= state.teamRounds.length) {
+      return;
+    }
+
+    state.currentRoundIndex = numericIndex;
+    broadcastState();
+  });
+
+  ipcMain.on('round:set-value', (_, index, side, value) => {
+    const numericIndex = Number(index);
+    if (!['red', 'blue'].includes(side) || !Number.isInteger(numericIndex) || numericIndex < 0 || numericIndex >= state.teamRounds.length) {
+      return;
+    }
+
+    if (value === '' || value === null || value === undefined) {
+      state.teamRounds[numericIndex][`${side}Score`] = '';
+      broadcastState();
+      return;
+    }
+
+    const parsedValue = Number(value);
+    if (Number.isNaN(parsedValue)) {
+      return;
+    }
+
+    state.teamRounds[numericIndex][`${side}Score`] = parsedValue;
+    broadcastState();
+  });
+
+  ipcMain.on('round:set-winner', (_, index, winner) => {
+    const numericIndex = Number(index);
+    if (!['red', 'blue', 'tie', 'none'].includes(winner) || !Number.isInteger(numericIndex) || numericIndex < 0 || numericIndex >= state.teamRounds.length) {
+      return;
+    }
+
+    state.teamRounds[numericIndex].winner = winner;
+    broadcastState();
+  });
+
+  ipcMain.on('round:toggle-senshu', (_, index) => {
+    const numericIndex = Number(index);
+    if (!Number.isInteger(numericIndex) || numericIndex < 0 || numericIndex >= state.teamRounds.length) {
+      return;
+    }
+
+    state.teamRounds[numericIndex].senshu = !state.teamRounds[numericIndex].senshu;
+    broadcastState();
+  });
+
+  ipcMain.on('round:save-current', () => {
+    if (!Number.isInteger(state.currentRoundIndex) || state.currentRoundIndex < 0 || state.currentRoundIndex >= state.teamRounds.length) {
+      return;
+    }
+
+    const round = state.teamRounds[state.currentRoundIndex];
+    if (!round) {
+      return;
+    }
+
+    round.redScore = state.red.score;
+    round.blueScore = state.blue.score;
+    round.winner = getRoundWinnerFromScores(round.redScore, round.blueScore, state.senshuSide);
+    round.senshu = state.senshuSide !== null && round.winner === state.senshuSide;
+
+    state.red.score = 0;
+    state.blue.score = 0;
+    state.timerCentiseconds = 9000;
+    stopTimer();
+    state.senshuSide = null;
+
+    if (state.currentRoundIndex === state.teamRounds.length - 1) {
+      state.currentRoundIndex = -1;
+    } else {
+      state.currentRoundIndex = state.currentRoundIndex + 1;
+    }
+
+    broadcastState();
+  });
+
+  ipcMain.on('round:reset-all', () => {
+    state.teamRounds = Array.from({ length: 5 }, () => createDefaultRound());
+    state.currentRoundIndex = 0;
+    state.senshuSide = null;
     broadcastState();
   });
 
@@ -202,7 +356,7 @@ app.whenReady().then(() => {
       return;
     }
 
-    state[side].name = nextName.trim() || (side === 'red' ? 'Competitor A' : 'Competitor B');
+    state[side].name = nextName.trim() || (side === 'red' ? 'AKA' : 'AO');
     broadcastState();
   });
 

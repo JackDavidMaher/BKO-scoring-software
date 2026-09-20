@@ -44,10 +44,44 @@
 
       .lane.red {
         background: linear-gradient(180deg, rgb(239 68 68 / 18%), rgb(239 68 68 / 5%));
+        position: relative;
       }
 
       .lane.blue {
         background: linear-gradient(180deg, rgb(59 130 246 / 18%), rgb(59 130 246 / 5%));
+        position: relative;
+      }
+
+      .lane .senshu-badge {
+        position: absolute;
+        width: clamp(4rem, 12vw, 7rem);
+        height: clamp(4rem, 12vw, 7rem);
+        border-radius: 50%;
+        background: #facc15;
+        color: #111827;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        font-size: clamp(1.4rem, 3.5vw, 3rem);
+        font-weight: 800;
+        box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.2);
+      }
+
+      .lane.red .senshu-badge {
+        left: 0.85rem;
+        top: 0.85rem;
+        right: auto;
+      }
+
+      .lane.blue .senshu-badge {
+        right: 0.85rem;
+        top: 0.85rem;
+        left: auto;
+      }
+
+      .lane.senshu-red .senshu-badge,
+      .lane.senshu-blue .senshu-badge {
+        display: flex;
       }
 
       .label {
@@ -101,7 +135,7 @@
       .timer-wrap {
         width: 100%;
         text-align: center;
-        padding: 1rem 0 1.4rem;
+        padding: 1rem 0 1rem;
       }
 
       .timer-label {
@@ -121,20 +155,73 @@
         color: #ef4444;
         text-shadow: 0 0 20px rgb(239 68 68 / 40%);
       }
+
+      .round-grid {
+        display: none;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 0.45rem;
+        width: min(520px, 82%);
+        margin: 0 auto 0.75rem;
+      }
+
+      .round-grid.visible {
+        display: grid;
+      }
+
+      .round-box {
+        min-height: 44px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        color: rgba(255, 255, 255, 0.9);
+        background: rgba(148, 163, 184, 0.18);
+      }
+
+      .round-box.red {
+        background: rgba(239, 68, 68, 0.9);
+        color: #fff;
+      }
+
+      .round-box.blue {
+        background: rgba(59, 130, 246, 0.9);
+        color: #fff;
+      }
+
+      .round-box.tie {
+        background: rgba(255, 255, 255, 0.9);
+        color: #0f172a;
+      }
+
+      .round-box.current {
+        box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.9);
+        background: rgba(250, 204, 21, 0.95);
+        color: #3f2d00;
+      }
+
+      .round-box.future {
+        opacity: 0.35;
+      }
     </style>
   </head>
   <body>
     <div class="scores">
       <section class="lane red">
+        <div class="senshu-badge">S</div>
         <div id="red-label" class="label">Red</div>
         <div id="red-score" class="score red">0</div>
-        <div id="red-name" class="name">Competitor A</div>
+        <div id="red-name" class="name">AKA</div>
       </section>
 
       <section class="lane blue">
+        <div class="senshu-badge">S</div>
         <div id="blue-label" class="label">Blue</div>
         <div id="blue-score" class="score blue">0</div>
-        <div id="blue-name" class="name">Competitor B</div>
+        <div id="blue-name" class="name">AO</div>
       </section>
     </div>
 
@@ -142,6 +229,8 @@
       <div class="timer-label">Countdown</div>
       <div id="timer" class="timer">02:00.00</div>
     </div>
+
+    <div id="round-grid" class="round-grid"></div>
 
     <script>
       function applyResponsiveType() {
@@ -159,6 +248,9 @@
       const blueScoreEl = document.getElementById('blue-score');
       const redNameEl = document.getElementById('red-name');
       const blueNameEl = document.getElementById('blue-name');
+      const redLaneEl = document.querySelector('.lane.red');
+      const blueLaneEl = document.querySelector('.lane.blue');
+      const roundGridEl = document.getElementById('round-grid');
       const timerEl = document.getElementById('timer');
       let lastHandledMatchEventId = 0;
       let flashTimeoutId = null;
@@ -261,8 +353,28 @@
         blueScoreEl.textContent = state.blue.score;
         redNameEl.textContent = state.red.name;
         blueNameEl.textContent = state.blue.name;
+
+        const isTeamMode = state.matchType === 'team';
+        redLaneEl.classList.toggle('senshu-red', state.senshuSide === 'red');
+        blueLaneEl.classList.toggle('senshu-blue', state.senshuSide === 'blue');
+        roundGridEl.classList.toggle('visible', isTeamMode);
+
+        if (isTeamMode) {
+          const rounds = Array.isArray(state.teamRounds) ? state.teamRounds : [];
+          roundGridEl.innerHTML = Array.from({ length: 5 }, (_, index) => {
+            const round = rounds[index] || { winner: 'none', senshu: false };
+            const stateClass = index < state.currentRoundIndex ? 'past' : index === state.currentRoundIndex ? 'current' : 'future';
+            const winnerClass = round.winner === 'red' ? 'red' : round.winner === 'blue' ? 'blue' : round.winner === 'tie' ? 'tie' : 'neutral';
+            const label = index === 4 ? 'R5' : `R${index + 1}`;
+            return `<div class="round-box ${winnerClass} ${stateClass}">${label}</div>`;
+          }).join('');
+        } else {
+          roundGridEl.innerHTML = '';
+        }
+
         timerEl.textContent = formatTime(state.timerCentiseconds);
         timerEl.classList.toggle('urgent', state.timerCentiseconds < 1500);
+
         handleMatchEvent(state.matchEvent);
       }
 

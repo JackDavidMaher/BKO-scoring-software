@@ -24,6 +24,8 @@
       body {
         margin: 0;
         min-height: 100vh;
+        max-height: 100vh;
+        overflow: hidden;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
         color: var(--text);
@@ -32,12 +34,26 @@
         padding: 1rem;
       }
 
+      .app-shell {
+        width: min(1100px, calc(100vw - 2rem));
+        display: grid;
+        grid-template-columns: minmax(0, 1.8fr) minmax(220px, 0.8fr);
+        gap: 1rem;
+        align-items: start;
+      }
+
       .panel {
-        width: min(560px, 100%);
         background: var(--panel);
         border-radius: 16px;
         padding: 1rem;
         box-shadow: 0 20px 40px rgb(15 23 42 / 10%);
+        overflow: hidden;
+      }
+
+      .side-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
       }
 
       h1 {
@@ -53,9 +69,101 @@
 
       .scoreboards {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(150px, 0.7fr);
         gap: 0.65rem;
         margin-bottom: 0.8rem;
+      }
+
+      .team-content {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+
+      .team-main {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .countback-column {
+        display: grid;
+        gap: 0.6rem;
+      }
+
+      .countback-box {
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        background: #f8fafc;
+        padding: 0.5rem 0.55rem;
+      }
+
+      .countback-title {
+        margin: 0 0 0.35rem;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .countback-list {
+        display: grid;
+        gap: 0.2rem;
+      }
+
+      .countback-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        font-size: 0.68rem;
+        color: var(--text);
+      }
+
+      .countback-row strong {
+        min-width: 1.5rem;
+        text-align: right;
+        font-size: 0.82rem;
+      }
+
+      .countback-total {
+        margin-top: 0.35rem;
+        padding-top: 0.25rem;
+        border-top: 1px solid #dfe7f1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.72rem;
+        font-weight: 800;
+      }
+
+      .mode-panel {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 0.35rem 0.45rem;
+        box-shadow: 0 10px 24px rgb(15 23 42 / 8%);
+      }
+
+      .mode-panel label {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .mode-panel select {
+        width: 100%;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 0.55rem 0.6rem;
+        font-size: 0.9rem;
+        background: #fff;
       }
 
       .team {
@@ -107,6 +215,21 @@
         gap: 0.4rem;
       }
 
+      .score-entry {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+      }
+
+      .score-label {
+        display: block;
+        font-size: 0.56rem;
+        line-height: 1.1;
+        letter-spacing: 0.03em;
+        color: var(--muted);
+        text-align: center;
+      }
+
       button {
         border: 0;
         border-radius: 12px;
@@ -141,6 +264,164 @@
         width: 100%;
         background: var(--soft);
         color: var(--muted);
+      }
+
+      .team-rounds-panel {
+        display: none;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 0.5rem;
+        background: #f8fafc;
+      }
+
+      .team-rounds-panel.visible {
+        display: block;
+      }
+
+      .team-rounds-list {
+        display: grid;
+        gap: 0.28rem;
+      }
+
+      .round-row {
+        display: grid;
+        gap: 0.2rem;
+        padding: 0.28rem 0.32rem 0.34rem;
+        border: 1px solid #dfe7f1;
+        border-radius: 10px;
+        background: #fff;
+      }
+
+      .round-row.active {
+        border-color: #f4bb2c;
+        box-shadow: 0 0 0 1px rgb(244 187 44 / 30%);
+      }
+
+      .round-row-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.35rem;
+      }
+
+      .round-id {
+        font-size: 0.8rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        text-transform: uppercase;
+      }
+
+      .round-inputs {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        gap: 0.45rem;
+        align-items: center;
+      }
+
+      .round-score-input {
+        width: 100%;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 0.28rem 0.36rem;
+        font-size: 0.85rem;
+        text-align: center;
+      }
+
+      .round-divider {
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      .round-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.3rem;
+      }
+
+      .winner-picker {
+        display: flex;
+        gap: 0.35rem;
+        flex-wrap: wrap;
+      }
+
+      .winner-btn,
+      .senshu-btn,
+      .select-round,
+      .next-round,
+      .senshu-toggle {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: #fff;
+        color: var(--text);
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 120ms ease, filter 120ms ease;
+      }
+
+      .winner-btn,
+      .senshu-btn,
+      .select-round,
+      .senshu-toggle {
+        padding: 0.22rem 0.32rem;
+        font-size: 0.68rem;
+      }
+
+      .senshu-toggle {
+        width: 100%;
+        margin-top: 0.45rem;
+        background: #f8fafc;
+      }
+
+      .senshu-toggle.active {
+        background: #fef3c7;
+        border-color: #f59e0b;
+        color: #92400e;
+      }
+
+      .next-round {
+        width: 100%;
+        margin-top: 0.8rem;
+        padding: 0.7rem 0.9rem;
+        background: #f59e0b;
+        color: #fff;
+        border-color: #d97706;
+      }
+
+      .winner-btn.selected {
+        background: #e2e8f0;
+        border-color: #94a3b8;
+      }
+
+      .winner-btn.red.selected {
+        background: rgb(220 38 38 / 13%);
+        border-color: rgb(220 38 38 / 55%);
+        color: #991b1b;
+      }
+
+      .winner-btn.blue.selected {
+        background: rgb(37 99 235 / 12%);
+        border-color: rgb(37 99 235 / 55%);
+        color: #1d4ed8;
+      }
+
+      .winner-btn.tie.selected {
+        background: rgb(250 204 21 / 16%);
+        border-color: rgb(250 204 21 / 70%);
+        color: #92400e;
+      }
+
+      .senshu-btn.active {
+        background: #fef3c7;
+        border-color: #f59e0b;
+        color: #92400e;
+      }
+
+      .select-round.selected {
+        background: #fef3c7;
+        border-color: #f59e0b;
+        color: #92400e;
       }
 
       .timer-panel {
@@ -182,53 +463,142 @@
     </style>
   </head>
   <body>
-    <section class="panel">
-      <h1>Match Controls</h1>
-      <p class="help">Set names, update scores, and control the countdown timer.</p>
+    <div class="app-shell">
+      <section class="panel">
+        <h1>Match Controls</h1>
+        <p class="help">Set names, update scores, and control the countdown timer.</p>
 
-      <div class="scoreboards">
-        <section class="team red">
-          <h2 class="team-title">Red Side</h2>
-          <p id="red-score" class="team-score">0</p>
-          <input id="red-name" class="name-input" type="text" value="Competitor A" placeholder="Red competitor name" />
-          <div class="buttons">
-            <button class="inc" data-side="red" data-delta="1">+1</button>
-            <button class="inc" data-side="red" data-delta="2">+2</button>
-            <button class="inc" data-side="red" data-delta="3">+3</button>
-            <button class="dec" data-side="red" data-delta="-1">-1</button>
-            <button class="dec" data-side="red" data-delta="-2">-2</button>
-            <button class="dec" data-side="red" data-delta="-3">-3</button>
-          </div>
-        </section>
+        <div class="scoreboards">
+          <section class="team blue">
+            <div class="team-content">
+              <div class="team-main">
+                <h2 class="team-title">Blue Side</h2>
+                <p id="blue-score" class="team-score">0</p>
+                <input id="blue-name" class="name-input" type="text" value="AO" placeholder="Blue competitor name" />
+                <button class="senshu-toggle blue" data-senshu-side="blue" type="button">S</button>
+              </div>
 
-        <section class="team blue">
-          <h2 class="team-title">Blue Side</h2>
-          <p id="blue-score" class="team-score">0</p>
-          <input id="blue-name" class="name-input" type="text" value="Competitor B" placeholder="Blue competitor name" />
-          <div class="buttons">
-            <button class="inc" data-side="blue" data-delta="1">+1</button>
-            <button class="inc" data-side="blue" data-delta="2">+2</button>
-            <button class="inc" data-side="blue" data-delta="3">+3</button>
-            <button class="dec" data-side="blue" data-delta="-1">-1</button>
-            <button class="dec" data-side="blue" data-delta="-2">-2</button>
-            <button class="dec" data-side="blue" data-delta="-3">-3</button>
-          </div>
-        </section>
-      </div>
+              <div class="buttons">
+                <div class="score-entry">
+                  <button class="inc" data-side="blue" data-delta="1">+1</button>
+                  <span class="score-label">(Yuko)</span>
+                </div>
+                <div class="score-entry">
+                  <button class="inc" data-side="blue" data-delta="2">+2</button>
+                  <span class="score-label">(Waza Ari)</span>
+                </div>
+                <div class="score-entry">
+                  <button class="inc" data-side="blue" data-delta="3">+3</button>
+                  <span class="score-label">(Ippon)</span>
+                </div>
+                <div class="score-entry">
+                  <button class="dec" data-side="blue" data-delta="-1">-1</button>
+                  <span class="score-label">(Yuko)</span>
+                </div>
+                <div class="score-entry">
+                  <button class="dec" data-side="blue" data-delta="-2">-2</button>
+                  <span class="score-label">(Waza Ari)</span>
+                </div>
+                <div class="score-entry">
+                  <button class="dec" data-side="blue" data-delta="-3">-3</button>
+                  <span class="score-label">(Ippon)</span>
+                </div>
+              </div>
 
-      <button id="reset-scores" class="reset">Reset Scores</button>
+            </div>
+          </section>
 
-      <section class="timer-panel">
-        <h2 class="team-title">Countdown Timer</h2>
-        <p id="timer-display" class="timer-display">02:00.00</p>
-        <div class="timer-line">
-          <input id="timer-input" class="timer-input" type="text" value="02:00.00" placeholder="MM:SS.CC" />
-          <button id="set-timer" class="timer-btn">Set Timer</button>
-          <button id="toggle-timer" class="timer-btn">Start</button>
+          <section class="team red">
+            <div class="team-content">
+              <div class="team-main">
+                <h2 class="team-title">Red Side</h2>
+                <p id="red-score" class="team-score">0</p>
+                <input id="red-name" class="name-input" type="text" value="AKA" placeholder="Red competitor name" />
+                <button class="senshu-toggle red" data-senshu-side="red" type="button">S</button>
+              </div>
+
+              <div class="buttons">
+                <div class="score-entry">
+                  <button class="inc" data-side="red" data-delta="1">+1</button>
+                  <span class="score-label">(Yuko)</span>
+                </div>
+                <div class="score-entry">
+                  <button class="inc" data-side="red" data-delta="2">+2</button>
+                  <span class="score-label">(Waza Ari)</span>
+                </div>
+                <div class="score-entry">
+                  <button class="inc" data-side="red" data-delta="3">+3</button>
+                  <span class="score-label">(Ippon)</span>
+                </div>
+                <div class="score-entry">
+                  <button class="dec" data-side="red" data-delta="-1">-1</button>
+                  <span class="score-label">(Yuko)</span>
+                </div>
+                <div class="score-entry">
+                  <button class="dec" data-side="red" data-delta="-2">-2</button>
+                  <span class="score-label">(Waza Ari)</span>
+                </div>
+                <div class="score-entry">
+                  <button class="dec" data-side="red" data-delta="-3">-3</button>
+                  <span class="score-label">(Ippon)</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <aside class="countback-column">
+            <div class="countback-box">
+              <p class="countback-title">Blue Countback</p>
+              <div class="countback-list">
+                <div class="countback-row"><span>Yuko</span><strong id="blue-countback-yuko">0</strong></div>
+                <div class="countback-row"><span>Waza Ari</span><strong id="blue-countback-wazaAri">0</strong></div>
+                <div class="countback-row"><span>Ippon</span><strong id="blue-countback-ippon">0</strong></div>
+              </div>
+              <div class="countback-total"><span>Total</span><strong id="blue-countback-total">0</strong></div>
+            </div>
+
+            <div class="countback-box">
+              <p class="countback-title">Red Countback</p>
+              <div class="countback-list">
+                <div class="countback-row"><span>Yuko</span><strong id="red-countback-yuko">0</strong></div>
+                <div class="countback-row"><span>Waza Ari</span><strong id="red-countback-wazaAri">0</strong></div>
+                <div class="countback-row"><span>Ippon</span><strong id="red-countback-ippon">0</strong></div>
+              </div>
+              <div class="countback-total"><span>Total</span><strong id="red-countback-total">0</strong></div>
+            </div>
+          </aside>
         </div>
-        <p class="space-note">Press Spacebar to start/stop the timer.</p>
+
+        <button id="reset-scores" class="reset">Reset Scores</button>
+
+        <section class="timer-panel">
+          <h2 class="team-title">Countdown Timer</h2>
+          <p id="timer-display" class="timer-display">02:00.00</p>
+          <div class="timer-line">
+            <input id="timer-input" class="timer-input" type="text" value="02:00.00" placeholder="MM:SS.CC" />
+            <button id="set-timer" class="timer-btn">Set Timer</button>
+            <button id="toggle-timer" class="timer-btn">Start</button>
+          </div>
+          <p class="space-note">Press Spacebar to start/stop the timer.</p>
+        </section>
       </section>
-    </section>
+
+      <aside class="side-panel">
+        <div class="mode-panel">
+          <label for="match-type">Match type</label>
+          <select id="match-type">
+            <option value="individual">Individual</option>
+            <option value="team">Team</option>
+          </select>
+        </div>
+
+        <section id="team-rounds-panel" class="team-rounds-panel">
+          <div id="team-rounds-list" class="team-rounds-list"></div>
+          <button id="reset-rounds" class="reset" type="button">Reset Team Scores</button>
+          <button id="next-round" class="next-round" type="button">Next Round</button>
+        </section>
+      </aside>
+    </div>
 
     <script>
       function applyResponsiveType() {
@@ -244,11 +614,16 @@
       const blueScoreEl = document.getElementById('blue-score');
       const redNameEl = document.getElementById('red-name');
       const blueNameEl = document.getElementById('blue-name');
+      const matchTypeEl = document.getElementById('match-type');
+      const teamRoundsPanel = document.getElementById('team-rounds-panel');
+      const teamRoundsListEl = document.getElementById('team-rounds-list');
       const resetScoresBtn = document.getElementById('reset-scores');
       const timerDisplayEl = document.getElementById('timer-display');
       const timerInputEl = document.getElementById('timer-input');
       const setTimerBtn = document.getElementById('set-timer');
       const toggleTimerBtn = document.getElementById('toggle-timer');
+      const nextRoundBtn = document.getElementById('next-round');
+      const resetRoundsBtn = document.getElementById('reset-rounds');
 
       function formatTime(totalCentiseconds) {
         const centiseconds = Math.max(0, Math.floor(Number(totalCentiseconds) || 0));
@@ -284,11 +659,80 @@
         return Math.floor(minutes) * 6000 + Math.floor(seconds) * 100 + Math.floor(centis);
       }
 
+      function normalizeRound(round) {
+        const safeRound = round && typeof round === 'object' ? round : {};
+        const redScore = safeRound.redScore === undefined || safeRound.redScore === null ? '' : String(safeRound.redScore);
+        const blueScore = safeRound.blueScore === undefined || safeRound.blueScore === null ? '' : String(safeRound.blueScore);
+        const winner = ['red', 'blue', 'tie', 'none'].includes(safeRound.winner) ? safeRound.winner : 'none';
+        return {
+          redScore,
+          blueScore,
+          winner,
+          senshu: Boolean(safeRound.senshu),
+        };
+      }
+
+      function normalizeRounds(rounds) {
+        const safeRounds = Array.isArray(rounds) ? rounds : [];
+        return Array.from({ length: 5 }, (_, index) => normalizeRound(safeRounds[index]));
+      }
+
+      function renderTeamRoundRows(rounds, currentRoundIndex) {
+        teamRoundsListEl.innerHTML = rounds.map((round, index) => {
+          const current = index === currentRoundIndex ? 'active' : '';
+          const selected = index === currentRoundIndex ? 'selected' : '';
+          const redSelected = round.winner === 'red' ? 'selected' : '';
+          const blueSelected = round.winner === 'blue' ? 'selected' : '';
+          const tieSelected = round.winner === 'tie' ? 'selected' : '';
+          const senshuActive = round.senshu ? 'active' : '';
+          return `
+            <div class="round-row ${current}">
+              <div class="round-row-header">
+                <span class="round-id">Round ${index + 1}</span>
+                <button class="select-round ${selected}" type="button" data-index="${index}">${index === currentRoundIndex ? 'Selected' : 'Select'}</button>
+              </div>
+              <div class="round-inputs">
+                <input class="round-score-input" type="number" inputmode="numeric" min="0" step="1" value="${round.blueScore}" data-index="${index}" data-side="blue" placeholder="B" />
+                <span class="round-divider">-</span>
+                <input class="round-score-input" type="number" inputmode="numeric" min="0" step="1" value="${round.redScore}" data-index="${index}" data-side="red" placeholder="R" />
+              </div>
+              <div class="round-actions">
+                <div class="winner-picker">
+                  <button class="winner-btn blue ${blueSelected}" type="button" data-index="${index}" data-winner="blue">B</button>
+                  <button class="winner-btn red ${redSelected}" type="button" data-index="${index}" data-winner="red">R</button>
+                  <button class="winner-btn tie ${tieSelected}" type="button" data-index="${index}" data-winner="tie">T</button>
+                </div>
+                <button class="senshu-btn ${senshuActive}" type="button" data-index="${index}">S</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
       function renderState(state) {
         redScoreEl.textContent = state.red.score;
         blueScoreEl.textContent = state.blue.score;
         redNameEl.value = state.red.name;
         blueNameEl.value = state.blue.name;
+
+        const updateCountback = (side) => {
+          const countback = state[side].countback || { yuko: 0, wazaAri: 0, ippon: 0 };
+          const total = (countback.yuko || 0) + (countback.wazaAri || 0) * 2 + (countback.ippon || 0) * 3;
+          document.getElementById(`${side}-countback-yuko`).textContent = countback.yuko || 0;
+          document.getElementById(`${side}-countback-wazaAri`).textContent = countback.wazaAri || 0;
+          document.getElementById(`${side}-countback-ippon`).textContent = countback.ippon || 0;
+          document.getElementById(`${side}-countback-total`).textContent = total;
+        };
+
+        updateCountback('red');
+        updateCountback('blue');
+        document.querySelector('.senshu-toggle.red').classList.toggle('active', state.senshuSide === 'red');
+        document.querySelector('.senshu-toggle.blue').classList.toggle('active', state.senshuSide === 'blue');
+        matchTypeEl.value = state.matchType === 'team' ? 'team' : 'individual';
+        teamRoundsPanel.classList.toggle('visible', state.matchType === 'team');
+
+        const rounds = normalizeRounds(state.teamRounds);
+        renderTeamRoundRows(rounds, Number.isInteger(state.currentRoundIndex) ? state.currentRoundIndex : 0);
         timerDisplayEl.textContent = formatTime(state.timerCentiseconds);
         toggleTimerBtn.textContent = state.timerRunning ? 'Stop' : 'Start';
       }
@@ -301,12 +745,65 @@
         });
       });
 
+      document.querySelectorAll('.senshu-toggle').forEach((button) => {
+        button.addEventListener('click', () => {
+          const side = button.dataset.senshuSide;
+          window.scoreboard.setSenshu(side);
+        });
+      });
+
       redNameEl.addEventListener('change', () => {
         window.scoreboard.setCompetitorName('red', redNameEl.value);
       });
 
       blueNameEl.addEventListener('change', () => {
         window.scoreboard.setCompetitorName('blue', blueNameEl.value);
+      });
+
+      matchTypeEl.addEventListener('change', () => {
+        window.scoreboard.setMatchType(matchTypeEl.value);
+      });
+
+      teamRoundsListEl.addEventListener('input', (event) => {
+        const input = event.target.closest('.round-score-input');
+        if (!input) {
+          return;
+        }
+
+        const index = Number(input.dataset.index);
+        const side = input.dataset.side;
+        window.scoreboard.setRoundValue(index, side, input.value);
+      });
+
+      teamRoundsListEl.addEventListener('click', (event) => {
+        const selectButton = event.target.closest('.select-round');
+        if (selectButton) {
+          const index = Number(selectButton.dataset.index);
+          window.scoreboard.setCurrentRound(index);
+          return;
+        }
+
+        const winnerButton = event.target.closest('.winner-btn');
+        if (winnerButton) {
+          const index = Number(winnerButton.dataset.index);
+          const winner = winnerButton.dataset.winner;
+          window.scoreboard.setRoundWinner(index, winner);
+          return;
+        }
+
+        const senshuButton = event.target.closest('.senshu-btn');
+        if (senshuButton) {
+          const index = Number(senshuButton.dataset.index);
+          window.scoreboard.toggleRoundSenshu(index);
+        }
+      });
+
+      nextRoundBtn.addEventListener('click', () => {
+        window.scoreboard.saveCurrentRound();
+      });
+
+      resetRoundsBtn.addEventListener('click', () => {
+        window.scoreboard.resetRoundScores();
       });
 
       resetScoresBtn.addEventListener('click', () => {
