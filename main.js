@@ -3,12 +3,92 @@ const path = require('path');
 
 let displayWindow;
 let controlWindow;
+
+function createDefaultWarnings() {
+  return {
+    c1: false,
+    c2: false,
+    c3: false,
+    hc: false,
+    h: false,
+  };
+}
+
+function sanitizeWarnings(rawWarnings) {
+  const nextWarnings = createDefaultWarnings();
+
+  if (!rawWarnings || typeof rawWarnings !== 'object') {
+    return nextWarnings;
+  }
+
+  nextWarnings.c1 = Boolean(rawWarnings.c1);
+  nextWarnings.c2 = Boolean(rawWarnings.c2);
+  nextWarnings.c3 = Boolean(rawWarnings.c3);
+  nextWarnings.hc = Boolean(rawWarnings.hc);
+  nextWarnings.h = Boolean(rawWarnings.h);
+
+  return nextWarnings;
+}
+
+function createDefaultCountback() {
+  return {
+    yuko: 0,
+    wazaAri: 0,
+    ippon: 0,
+  };
+}
+
+function sanitizeCountback(rawCountback) {
+  const nextCountback = createDefaultCountback();
+
+  if (!rawCountback || typeof rawCountback !== 'object') {
+    return nextCountback;
+  }
+
+  const yuko = Number(rawCountback.yuko);
+  const wazaAri = Number(rawCountback.wazaAri);
+  const ippon = Number(rawCountback.ippon);
+
+  nextCountback.yuko = Number.isFinite(yuko) ? yuko : 0;
+  nextCountback.wazaAri = Number.isFinite(wazaAri) ? wazaAri : 0;
+  nextCountback.ippon = Number.isFinite(ippon) ? ippon : 0;
+
+  return nextCountback;
+}
+
+function applyCountbackDelta(side, key, delta) {
+  state[side].countback[key] += delta;
+  state.currentRoundCountback[side][key] += delta;
+}
+
+function undoCurrentRoundCountback() {
+  ['red', 'blue'].forEach((side) => {
+    ['yuko', 'wazaAri', 'ippon'].forEach((key) => {
+      state[side].countback[key] -= state.currentRoundCountback[side][key];
+      state[side].countback[key] = Math.max(0, state[side].countback[key]);
+    });
+  });
+}
+
+function resetCurrentRoundCountback() {
+  state.currentRoundCountback = {
+    red: createDefaultCountback(),
+    blue: createDefaultCountback(),
+  };
+}
+
 function createDefaultRound() {
   return {
     redScore: '',
     blueScore: '',
     winner: 'none',
     senshu: false,
+    senshuSide: null,
+    redWarnings: createDefaultWarnings(),
+    blueWarnings: createDefaultWarnings(),
+    redCountback: createDefaultCountback(),
+    blueCountback: createDefaultCountback(),
+    completed: false,
   };
 }
 
@@ -17,6 +97,7 @@ let state = {
     label: 'AKA',
     name: 'AKA',
     score: 0,
+    warnings: createDefaultWarnings(),
     countback: {
       yuko: 0,
       wazaAri: 0,
@@ -27,6 +108,7 @@ let state = {
     label: 'AO',
     name: 'AO',
     score: 0,
+    warnings: createDefaultWarnings(),
     countback: {
       yuko: 0,
       wazaAri: 0,
@@ -37,6 +119,10 @@ let state = {
   timerRunning: false,
   matchType: 'individual',
   senshuSide: null,
+  currentRoundCountback: {
+    red: createDefaultCountback(),
+    blue: createDefaultCountback(),
+  },
   currentRoundIndex: 0,
   teamRounds: Array.from({ length: 5 }, () => createDefaultRound()),
   matchEvent: {
@@ -226,17 +312,20 @@ app.whenReady().then(() => {
     }
 
     const key = absoluteValue === 1 ? 'yuko' : absoluteValue === 2 ? 'wazaAri' : 'ippon';
-    state[side].countback[key] += delta > 0 ? 1 : -1;
+    applyCountbackDelta(side, key, delta > 0 ? 1 : -1);
     state[side].score += delta;
     evaluateMatchEvents(state.timerCentiseconds);
     broadcastState();
   });
 
   ipcMain.on('score:reset', () => {
+    undoCurrentRoundCountback();
+    resetCurrentRoundCountback();
     state.red.score = 0;
     state.blue.score = 0;
-    state.red.countback = { yuko: 0, wazaAri: 0, ippon: 0 };
-    state.blue.countback = { yuko: 0, wazaAri: 0, ippon: 0 };
+    state.red.warnings = createDefaultWarnings();
+    state.blue.warnings = createDefaultWarnings();
+    state.senshuSide = null;
     evaluateMatchEvents(state.timerCentiseconds);
     broadcastState();
   });
@@ -266,6 +355,30 @@ app.whenReady().then(() => {
     }
 
     state.currentRoundIndex = numericIndex;
+
+    const selectedRound = state.teamRounds[numericIndex];
+    if (selectedRound && selectedRound.completed) {
+      const redScore = Number(selectedRound.redScore);
+      const blueScore = Number(selectedRound.blueScore);
+      state.red.score = Number.isFinite(redScore) ? redScore : 0;
+      state.blue.score = Number.isFinite(blueScore) ? blueScore : 0;
+      state.red.warnings = sanitizeWarnings(selectedRound.redWarnings);
+      state.blue.warnings = sanitizeWarnings(selectedRound.blueWarnings);
+      state.currentRoundCountback.red = sanitizeCountback(selectedRound.redCountback);
+      state.currentRoundCountback.blue = sanitizeCountback(selectedRound.blueCountback);
+
+      if (selectedRound.senshuSide === 'red' || selectedRound.senshuSide === 'blue') {
+        state.senshuSide = selectedRound.senshuSide;
+      } else {
+        state.senshuSide = null;
+      }
+
+      state.timerCentiseconds = 9000;
+      stopTimer();
+    } else {
+      resetCurrentRoundCountback();
+    }
+
     broadcastState();
   });
 
@@ -324,12 +437,21 @@ app.whenReady().then(() => {
     round.blueScore = state.blue.score;
     round.winner = getRoundWinnerFromScores(round.redScore, round.blueScore, state.senshuSide);
     round.senshu = state.senshuSide !== null && round.winner === state.senshuSide;
+    round.senshuSide = state.senshuSide;
+    round.redWarnings = sanitizeWarnings(state.red.warnings);
+    round.blueWarnings = sanitizeWarnings(state.blue.warnings);
+    round.redCountback = sanitizeCountback(state.currentRoundCountback.red);
+    round.blueCountback = sanitizeCountback(state.currentRoundCountback.blue);
+    round.completed = true;
 
     state.red.score = 0;
     state.blue.score = 0;
     state.timerCentiseconds = 9000;
     stopTimer();
     state.senshuSide = null;
+    state.red.warnings = createDefaultWarnings();
+    state.blue.warnings = createDefaultWarnings();
+    resetCurrentRoundCountback();
 
     if (state.currentRoundIndex === state.teamRounds.length - 1) {
       state.currentRoundIndex = -1;
@@ -344,6 +466,9 @@ app.whenReady().then(() => {
     state.teamRounds = Array.from({ length: 5 }, () => createDefaultRound());
     state.currentRoundIndex = 0;
     state.senshuSide = null;
+    state.red.countback = createDefaultCountback();
+    state.blue.countback = createDefaultCountback();
+    resetCurrentRoundCountback();
     broadcastState();
   });
 
@@ -357,6 +482,19 @@ app.whenReady().then(() => {
     }
 
     state[side].name = nextName.trim() || (side === 'red' ? 'AKA' : 'AO');
+    broadcastState();
+  });
+
+  ipcMain.on('warning:toggle', (_, side, level) => {
+    if (!['red', 'blue'].includes(side)) {
+      return;
+    }
+
+    if (!['c1', 'c2', 'c3', 'hc', 'h'].includes(level)) {
+      return;
+    }
+
+    state[side].warnings[level] = !state[side].warnings[level];
     broadcastState();
   });
 

@@ -132,6 +132,31 @@
         font-weight: 700;
       }
 
+      .warning-row {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 0.35rem;
+        width: min(24rem, 84%);
+        margin-top: 0.65rem;
+      }
+
+      .warning-indicator {
+        border: 1px solid rgba(248, 250, 252, 0.4);
+        border-radius: 999px;
+        font-size: clamp(0.55rem, 1.2vw, 0.85rem);
+        letter-spacing: 0.06em;
+        padding: 0.2rem 0.25rem;
+        color: rgba(248, 250, 252, 0.82);
+        background: rgba(148, 163, 184, 0.18);
+        font-weight: 700;
+      }
+
+      .warning-indicator.active {
+        background: #fef3c7;
+        border-color: #f59e0b;
+        color: #92400e;
+      }
+
       .timer-wrap {
         width: 100%;
         text-align: center;
@@ -215,6 +240,13 @@
         <div id="red-label" class="label">Red</div>
         <div id="red-score" class="score red">0</div>
         <div id="red-name" class="name">AKA</div>
+        <div id="red-warnings" class="warning-row">
+          <span class="warning-indicator" data-warning-level="c1">C1</span>
+          <span class="warning-indicator" data-warning-level="c2">C2</span>
+          <span class="warning-indicator" data-warning-level="c3">C3</span>
+          <span class="warning-indicator" data-warning-level="hc">HC</span>
+          <span class="warning-indicator" data-warning-level="h">H</span>
+        </div>
       </section>
 
       <section class="lane blue">
@@ -222,6 +254,13 @@
         <div id="blue-label" class="label">Blue</div>
         <div id="blue-score" class="score blue">0</div>
         <div id="blue-name" class="name">AO</div>
+        <div id="blue-warnings" class="warning-row">
+          <span class="warning-indicator" data-warning-level="c1">C1</span>
+          <span class="warning-indicator" data-warning-level="c2">C2</span>
+          <span class="warning-indicator" data-warning-level="c3">C3</span>
+          <span class="warning-indicator" data-warning-level="hc">HC</span>
+          <span class="warning-indicator" data-warning-level="h">H</span>
+        </div>
       </section>
     </div>
 
@@ -250,8 +289,11 @@
       const blueNameEl = document.getElementById('blue-name');
       const redLaneEl = document.querySelector('.lane.red');
       const blueLaneEl = document.querySelector('.lane.blue');
+      const redWarningsEl = document.getElementById('red-warnings');
+      const blueWarningsEl = document.getElementById('blue-warnings');
       const roundGridEl = document.getElementById('round-grid');
       const timerEl = document.getElementById('timer');
+      const warningLevels = ['c1', 'c2', 'c3', 'hc', 'h'];
       let lastHandledMatchEventId = 0;
       let flashTimeoutId = null;
       let audioContext = null;
@@ -346,6 +388,31 @@
         }
       }
 
+      function getEffectiveWarnings(rawWarnings) {
+        const safeWarnings = rawWarnings && typeof rawWarnings === 'object' ? rawWarnings : {};
+        const highestActiveIndex = warningLevels.reduce((highestIndex, level, index) => {
+          return safeWarnings[level] ? index : highestIndex;
+        }, -1);
+
+        const effective = warningLevels.reduce((result, level, index) => {
+          result[level] = index <= highestActiveIndex;
+          return result;
+        }, {});
+
+        return effective;
+      }
+
+      function renderWarnings(container, warnings) {
+        warningLevels.forEach((level) => {
+          const indicator = container.querySelector(`[data-warning-level="${level}"]`);
+          if (!indicator) {
+            return;
+          }
+
+          indicator.classList.toggle('active', Boolean(warnings[level]));
+        });
+      }
+
       function renderState(state) {
         redLabelEl.textContent = state.red.label;
         blueLabelEl.textContent = state.blue.label;
@@ -353,6 +420,8 @@
         blueScoreEl.textContent = state.blue.score;
         redNameEl.textContent = state.red.name;
         blueNameEl.textContent = state.blue.name;
+        renderWarnings(redWarningsEl, getEffectiveWarnings(state.red.warnings));
+        renderWarnings(blueWarningsEl, getEffectiveWarnings(state.blue.warnings));
 
         const isTeamMode = state.matchType === 'team';
         redLaneEl.classList.toggle('senshu-red', state.senshuSide === 'red');

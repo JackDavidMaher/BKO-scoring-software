@@ -209,6 +209,30 @@
         font-size: 0.9rem;
       }
 
+      .warning-strip {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 0.25rem;
+        margin: 0 0 0.55rem;
+      }
+
+      .warning-btn {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: #fff;
+        color: #334155;
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+        padding: 0.26rem 0.2rem;
+      }
+
+      .warning-btn.active {
+        background: #fef3c7;
+        border-color: #f59e0b;
+        color: #92400e;
+      }
+
       .buttons {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -475,6 +499,13 @@
                 <h2 class="team-title">Blue Side</h2>
                 <p id="blue-score" class="team-score">0</p>
                 <input id="blue-name" class="name-input" type="text" value="AO" placeholder="Blue competitor name" />
+                <div class="warning-strip">
+                  <button class="warning-btn" type="button" data-warning-side="blue" data-warning-level="c1">C1</button>
+                  <button class="warning-btn" type="button" data-warning-side="blue" data-warning-level="c2">C2</button>
+                  <button class="warning-btn" type="button" data-warning-side="blue" data-warning-level="c3">C3</button>
+                  <button class="warning-btn" type="button" data-warning-side="blue" data-warning-level="hc">HC</button>
+                  <button class="warning-btn" type="button" data-warning-side="blue" data-warning-level="h">H</button>
+                </div>
                 <button class="senshu-toggle blue" data-senshu-side="blue" type="button">S</button>
               </div>
 
@@ -514,6 +545,13 @@
                 <h2 class="team-title">Red Side</h2>
                 <p id="red-score" class="team-score">0</p>
                 <input id="red-name" class="name-input" type="text" value="AKA" placeholder="Red competitor name" />
+                <div class="warning-strip">
+                  <button class="warning-btn" type="button" data-warning-side="red" data-warning-level="c1">C1</button>
+                  <button class="warning-btn" type="button" data-warning-side="red" data-warning-level="c2">C2</button>
+                  <button class="warning-btn" type="button" data-warning-side="red" data-warning-level="c3">C3</button>
+                  <button class="warning-btn" type="button" data-warning-side="red" data-warning-level="hc">HC</button>
+                  <button class="warning-btn" type="button" data-warning-side="red" data-warning-level="h">H</button>
+                </div>
                 <button class="senshu-toggle red" data-senshu-side="red" type="button">S</button>
               </div>
 
@@ -624,6 +662,7 @@
       const toggleTimerBtn = document.getElementById('toggle-timer');
       const nextRoundBtn = document.getElementById('next-round');
       const resetRoundsBtn = document.getElementById('reset-rounds');
+      const warningLevels = ['c1', 'c2', 'c3', 'hc', 'h'];
 
       function formatTime(totalCentiseconds) {
         const centiseconds = Math.max(0, Math.floor(Number(totalCentiseconds) || 0));
@@ -677,6 +716,31 @@
         return Array.from({ length: 5 }, (_, index) => normalizeRound(safeRounds[index]));
       }
 
+      function getEffectiveWarnings(rawWarnings) {
+        const safeWarnings = rawWarnings && typeof rawWarnings === 'object' ? rawWarnings : {};
+        const highestActiveIndex = warningLevels.reduce((highestIndex, level, index) => {
+          return safeWarnings[level] ? index : highestIndex;
+        }, -1);
+
+        const effective = warningLevels.reduce((result, level, index) => {
+          result[level] = index <= highestActiveIndex;
+          return result;
+        }, {});
+
+        return effective;
+      }
+
+      function renderWarnings(side, warnings) {
+        warningLevels.forEach((level) => {
+          const button = document.querySelector(`.warning-btn[data-warning-side="${side}"][data-warning-level="${level}"]`);
+          if (!button) {
+            return;
+          }
+
+          button.classList.toggle('active', Boolean(warnings[level]));
+        });
+      }
+
       function renderTeamRoundRows(rounds, currentRoundIndex) {
         teamRoundsListEl.innerHTML = rounds.map((round, index) => {
           const current = index === currentRoundIndex ? 'active' : '';
@@ -715,6 +779,9 @@
         redNameEl.value = state.red.name;
         blueNameEl.value = state.blue.name;
 
+        renderWarnings('red', getEffectiveWarnings(state.red.warnings));
+        renderWarnings('blue', getEffectiveWarnings(state.blue.warnings));
+
         const updateCountback = (side) => {
           const countback = state[side].countback || { yuko: 0, wazaAri: 0, ippon: 0 };
           const total = (countback.yuko || 0) + (countback.wazaAri || 0) * 2 + (countback.ippon || 0) * 3;
@@ -749,6 +816,14 @@
         button.addEventListener('click', () => {
           const side = button.dataset.senshuSide;
           window.scoreboard.setSenshu(side);
+        });
+      });
+
+      document.querySelectorAll('.warning-btn').forEach((button) => {
+        button.addEventListener('click', () => {
+          const side = button.dataset.warningSide;
+          const level = button.dataset.warningLevel;
+          window.scoreboard.toggleWarning(side, level);
         });
       });
 

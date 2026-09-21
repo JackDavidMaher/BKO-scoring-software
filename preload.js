@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('scoreboard', {
   changeScore: (side, delta) => ipcRenderer.send('score:change', side, delta),
   resetScores: () => ipcRenderer.send('score:reset'),
   setCompetitorName: (side, name) => ipcRenderer.send('competitor:set-name', side, name),
+  toggleWarning: (side, level) => ipcRenderer.send('warning:toggle', side, level),
   setMatchType: (mode) => ipcRenderer.send('match-type:set', mode),
   setSenshu: (side) => ipcRenderer.send('senshu:set', side),
   setCurrentRound: (index) => ipcRenderer.send('round:set-current', index),
